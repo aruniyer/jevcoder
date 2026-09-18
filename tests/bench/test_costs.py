@@ -33,7 +33,7 @@ class CostTests(unittest.TestCase):
 class SummaryTests(unittest.TestCase):
     def test_missing_run_remains_unevaluated(self):
         with tempfile.TemporaryDirectory() as directory:
-            result = summarize_arm(Path(directory), "baseline", {"costPerMillionTokens": PRICES, "jev": {"inputPerMillionTokens": 0.042}})
+            result = summarize_arm(Path(directory), "baseline", {"costPerMillionTokens": PRICES, "jev": {"inputPerMillionTokens": 0.042}}, "example__repo-1")
             self.assertIsNone(result["resolved"])
             self.assertEqual(result["generation_status"], "not_started")
             self.assertEqual(result["llm_requests"], 0)
@@ -49,7 +49,7 @@ class SummaryTests(unittest.TestCase):
                 {"type": "message_end", "message": {"role": "assistant", "usage": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}}},
             ]
             (arm / "events.jsonl").write_text("\n".join(json.dumps(e) for e in records) + '\n{"type":', encoding="utf-8")
-            result = summarize_arm(root, "jevcoder", {"costPerMillionTokens": PRICES, "jev": {"inputPerMillionTokens": 0.042}})
+            result = summarize_arm(root, "jevcoder", {"costPerMillionTokens": PRICES, "jev": {"inputPerMillionTokens": 0.042}}, "example__repo-1")
             reasons = {item["reason"] for item in result["unaccounted_usage"]}
             self.assertEqual(reasons, {"no_reported_usage", "no_completion_record", "incomplete_or_invalid_json"})
             self.assertIsNone(result["resolved"])

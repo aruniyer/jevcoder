@@ -1,9 +1,6 @@
 """Aggregate finalized usage once, cross-check Pi costs, and attach official grading."""
-import hashlib
 import json
 import math
-from pathlib import Path
-import shutil
 
 TOKEN_KEYS = ("input", "output", "cacheRead", "cacheWrite")
 
@@ -20,7 +17,7 @@ def model_cost(usage, prices):
     return sum(usage[k] * tier[k] for k in TOKEN_KEYS) / 1_000_000
 
 
-def summarize_arm(root, arm, pricing, instance_id="astropy__astropy-12907", report_path=None):
+def summarize_arm(root, arm, pricing, instance_id, report_path=None):
     directory = root / arm
     events, parse_errors = [], []
     event_file = directory / "events.jsonl"
@@ -65,8 +62,7 @@ def summarize_arm(root, arm, pricing, instance_id="astropy__astropy-12907", repo
         unknown.append({"kind": "llm", "reason": "non_success_http_responses", "statuses": statuses})
     llm_cost = sum(costs)
     jev_cost = jev_input * pricing["jev"]["inputPerMillionTokens"] / 1_000_000
-    report_path = report_path or root / "logs/run_evaluation" / f"jevcoder-comparison-{arm}" / arm / instance_id / "report.json"
-    evaluation = json.loads(report_path.read_text())[instance_id] if report_path.exists() else {"resolved": None, "status": "not_evaluated"}
+    evaluation = json.loads(report_path.read_text())[instance_id] if report_path is not None and report_path.exists() else {"resolved": None, "status": "not_evaluated"}
     run_file = directory / "run.json"
     run = json.loads(run_file.read_text()) if run_file.exists() else {"status": "not_started"}
     return {
@@ -87,39 +83,5 @@ def summarize_arm(root, arm, pricing, instance_id="astropy__astropy-12907", repo
     }
 
 
-def main():
-    repo = Path(__file__).resolve().parents[2]
-    root = repo / ".jevcoder/bench/astropy-12907"
-    output = repo / "experiments/astropy-12907-2026-09-17"
-    output.mkdir(parents=True, exist_ok=True)
-    pricing = json.loads((root / "pricing.json").read_text())
-    arms = [summarize_arm(root, arm, pricing) for arm in ("baseline", "jevcoder")]
-    assert arms[0]["prompt_sha256"] == arms[1]["prompt_sha256"]
-    assert arms[0]["image_id"] == arms[1]["image_id"]
-    negative = json.loads((root / "logs/run_evaluation/jevcoder-comparison-negative-control/negative-control/astropy__astropy-12907/report.json").read_text())["astropy__astropy-12907"]
-    result = {
-        "dataset": "princeton-nlp/SWE-bench_Verified", "split": "test", "row_offset": 0,
-        "instance_id": "astropy__astropy-12907", "base_commit": "d16bfe05a744909de4b27f5875fe0d4ed41ce607",
-        "instance_snapshot_sha256": hashlib.sha256((root / "instance.json").read_bytes()).hexdigest(),
-        "harness_version": "4.1.0", "model": "github-copilot/gpt-6-astra", "thinking": "medium",
-        "pricing": pricing, "runs": arms, "negative_control": negative,
-        "observed_cost_reduction_percent": 100 * (1 - arms[1]["estimated_total_cost_usd"] / arms[0]["estimated_total_cost_usd"]),
-        "observed_time_reduction_percent": 100 * (1 - arms[1]["elapsed_seconds"] / arms[0]["elapsed_seconds"]),
-        "limitations": [
-            "One instance, one generation per arm, baseline first; no repeated trials or statistical claim.",
-            "Jev selected bash twice, not code_editing; the second shell call combined regression creation, source editing, and testing.",
-            "Baseline did broader verification, including a full modeling-suite run and an original-code comparison; JevCoder ran focused tests only.",
-            "The shared Docker adapter uses standard AgentTool wrappers; it does not preserve optional builtin system-prompt snippets/guidelines. This is not stock local-tool Pi prompting.",
-            "Prompt caching differs: baseline had cache reads; JevCoder had none. No claim of independently controlled provider cache state.",
-            "Costs are published-rate estimates from returned usage, not billing receipts; subscription allowances and infrastructure cost are excluded.",
-            "All observed requests have usage; completely unreported provider-internal attempts cannot be ruled out from client logs.",
-        ],
-    }
-    (output / "results.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
-    for arm in ("baseline", "jevcoder"):
-        shutil.copyfile(root / arm / "prediction.patch", output / f"{arm}.patch")
-    print(json.dumps({"runs": [{k: a[k] for k in ("arm", "resolved", "llm_requests", "jev_requests", "llm_cost_usd", "jev_cost_usd", "estimated_total_cost_usd", "elapsed_seconds", "unaccounted_usage")} for a in arms], "cost_reduction_percent": result["observed_cost_reduction_percent"]}, indent=2))
-
-
 if __name__ == "__main__":
-    main()
+    raise SystemExit("Use python scripts/bench/batch.py report to summarize a batch.")

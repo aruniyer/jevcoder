@@ -3,7 +3,7 @@ import json
 import os
 from pathlib import Path
 
-root = Path(__file__).resolve().parents[2] / ".jevcoder/bench" / os.environ.get("BENCH_BATCH_ID", "verified-10-20260917")
+root = Path(__file__).resolve().parents[2] / ".jevcoder/bench" / os.environ.get("BENCH_BATCH_ID", "verified-10-cache-v1-20260917")
 manifest = json.loads((root / "manifest.json").read_text())
 total = 0.0
 for case in manifest["cases"]:

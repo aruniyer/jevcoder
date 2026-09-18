@@ -16,7 +16,7 @@ import urllib.request
 from run import ROOT, docker, image_name, run_arm, source_hashes
 from summarize import summarize_arm
 
-BATCH = os.environ.get("BENCH_BATCH_ID", "verified-10-20260917")
+BATCH = os.environ.get("BENCH_BATCH_ID", "verified-10-cache-v1-20260917")
 SOURCE_BATCH = os.environ.get("BENCH_SOURCE_BATCH")
 for name in (BATCH, SOURCE_BATCH):
     if name is not None and not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", name):
@@ -40,6 +40,8 @@ def prepare():
     CONTROL.mkdir(parents=True, exist_ok=True)
     if (CONTROL / "manifest.json").exists():
         return json.loads((CONTROL / "manifest.json").read_text())
+    if (OUTPUT / "manifest.json").exists():
+        raise RuntimeError("Published results already exist for this ID. Choose a new BENCH_BATCH_ID; raw artifacts are required to regenerate an existing report.")
     offsets = sorted(random.Random(SEED).sample(range(1, 500), 10))
     save(CONTROL / "selection.json", {"seed": SEED, "offsets": offsets,
         "method": "sample 10 without replacement from Verified row offsets 1..499; exclude pilot offset 0; sort offsets"})

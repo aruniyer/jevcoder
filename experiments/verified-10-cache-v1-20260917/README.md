@@ -38,18 +38,17 @@ JevCoder was cheaper on 9/10 cases. The asterisk denotes unknown usage: the Astr
 
 ## Interpretation and limits
 
-- **Cache reuse improved substantially:** hybrid cache reads were 87.39% of input here, versus 1.56% in the prior filtered-schema batch. All requests within each hybrid run retained one tool/system-prefix fingerprint.
+- **Cache reuse was effective:** hybrid cache reads were 87.39% of input, compared with 91.07% for its fresh baseline. All requests within each hybrid run retained one tool/system-prefix fingerprint.
 - Fresh plain Pi saw 1,638,943 cache-read tokens and 160,236 cache-write tokens. The hybrid saw 818,508 cache-read tokens and 117,725 cache-write tokens. Output tokens were 22,305 versus 12,298; reasoning is included in output and was not counted twice.
 - The primary result is **38% lower recorded-usage spending at equal observed solve count**, not a 50% reduction or a billing receipt. The unknown router request prevents claiming exact total billing.
 - Savings are not uniform. Roughly two-thirds of the total dollar difference comes from the unresolved Astropy case, where the hybrid ended early after the router error. As a secondary sensitivity check, spending on the **eight mutually resolved cases alone** was $2.610009 versus $2.022825814, about **22.50% lower**. This does not replace the primary all-ten total.
 - This is one generation per arm on the same known development sample used previously. It is not an unseen test set, statistical proof, or a clean attribution of every difference solely to caching. Fresh baselines, alternating order, and fixed source hashes improve comparability but do not eliminate model/service variability or independently reset server caches.
-- The prior batch remains preserved ($5.14 vs $8.44); its baseline must not be substituted for this run's $4.76 baseline to inflate the saving.
 
-Machine-readable results, prices, unknown-usage flags, and official per-test grading are in [results.json](results.json). All 20 generated patches are under [patches/](patches/). All experiment/evaluation containers were removed; cached images and prior experiment artifacts were retained.
+Machine-readable results, prices, unknown-usage flags, and official per-test grading are in [results.json](results.json). All 20 generated patches are under [patches/](patches/). All experiment/evaluation containers were removed; cached images were retained.
 
 ## Prospective protocol
 
-- Reuse the **exact dataset snapshot** from `verified-10-20260917`, verified by SHA-256. Same ten instance IDs, base commits, issue prompts, and alternating arm order; no replacements or outcome-based filtering.
+- Use a fixed dataset snapshot verified by SHA-256. Both arms use the same ten instance IDs, base commits, and issue prompts, with alternating arm order and no replacements or outcome-based filtering. Original provenance fields remain unchanged in the manifest.
 - Both arms are regenerated from fresh Pi sessions and clean Docker containers. This is a repeat on a known development sample, not a newly held-out sample.
 - Copilot `gpt-6-astra`, medium thinking, and Pi 0.85.1 for both arms. Router pinned to `jev-1.13.0`.
 - Native `read`, `bash`, `edit`, and `write` implementations with preserved prompt metadata, delegated to separate network-disabled containers; no host credentials, Docker socket, or evaluator artifacts mounted in workers.
@@ -61,13 +60,12 @@ Machine-readable results, prices, unknown-usage flags, and official per-test gra
 - Primary comparison: **this batch's** total estimated spending (all ten cases, failures included, plus Jev), solve rate, and spending per resolved issue. Prior results are historical context, not the denominator.
 - Missing usage remains unknown, not free. Prices are snapshotted; costs are published-rate consumption estimates, not billing receipts. Provider cache state is not independently controlled.
 
-Frozen settings, source hashes, dataset hashes, and selected cases are in [manifest.json](manifest.json). Exact implementation snapshots and all raw/private artifacts are under `.jevcoder/bench/verified-10-cache-v1-20260917/` (Git-ignored).
+Frozen settings, source hashes, dataset hashes, and selected cases are in [manifest.json](manifest.json). The exact inference code is retained in [source-snapshot/](source-snapshot/). Raw/private artifacts remain local under `.jevcoder/bench/verified-10-cache-v1-20260917/` (Git-ignored).
 
 ## Commands
 
 ```powershell
 $env:BENCH_BATCH_ID = "verified-10-cache-v1-20260917"
-$env:BENCH_SOURCE_BATCH = "verified-10-20260917"
 python scripts/bench/progress.py
 ```
 

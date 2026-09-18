@@ -1,71 +1,54 @@
 # SWE-bench experiment tooling
 
-These helpers are **not loaded or shipped with the Pi extension**. The [pilot report](../../experiments/astropy-12907-2026-09-17/README.md) preserves the original single-instance results and [old Docker adapter](../../experiments/astropy-12907-2026-09-17/docker-tools-v0.ts). The current adapter preserves native tool prompt metadata and allows reading known full-output files produced by its own shell tool. A new run with this adapter is a new experiment, not an exact replay of the pilot. Shell calls can still bundle editing/testing.
+These helpers are **not loaded or shipped with the Pi extension**. The repository retains only the [latest cache-stable 10-instance comparison](../../experiments/verified-10-cache-v1-20260917/README.md), including its reports, patches, manifest, and exact inference-source snapshot.
 
-## Prospective 10-instance batch
+## Read the retained results
 
-```bash
+- Public artifacts: `experiments/verified-10-cache-v1-20260917/`.
+- Local/private raw artifacts: `.jevcoder/bench/verified-10-cache-v1-20260917/` (Git-ignored and not included in a clone).
+- `python scripts/bench/progress.py` defaults to this batch and requires the local raw artifacts.
+- `python scripts/bench/batch.py report` regenerates a report without model calls, but also requires its raw events and official evaluation reports. On a fresh clone, read the committed `results.json` instead.
+
+The frozen `source-snapshot/` preserves the implementation actually used for the published result. Current helper code can evolve; do not overwrite that snapshot or silently replay paid runs.
+
+## Run a new batch
+
+Requirements: Python 3.10+, Node/Pi dependencies (`npm install --ignore-scripts`), Docker with Linux containers, existing Pi Copilot authentication with GPT-6 Astra access, and a Jev key.
+
+Use a **new** experiment ID:
+
+```powershell
+$env:BENCH_BATCH_ID = "verified-10-new-experiment"
+$env:TYPESAFE_API_KEY = (Get-Content -Raw .\jev_key.txt).Trim()
 python scripts/bench/batch.py prepare
 python scripts/bench/batch.py run
 python scripts/bench/progress.py
 ```
 
-Preparation fixes ten seeded samples (excluding the pilot), alternating arm order, source hashes, prices, and budgets before inference. `run` executes two pairs concurrently, then performs official evaluation in a separate trusted Docker helper and produces a report. It skips existing arm directories rather than repeating paid runs; infrastructure failures and missing patches are retained, not replaced with another sample. Do not modify the frozen implementation during a batch.
+Preparation fixes ten seeded samples, alternating arm order, source hashes, prices, and budgets before inference. It fetches evaluator-only dataset metadata and snapshots cached Pi pricing; check published rates before a new run. Optionally set `BENCH_SOURCE_BATCH` to another **locally available raw batch** to reuse its exact dataset snapshot. A fresh clone does not contain such snapshots, so normally leave it unset.
 
-The per-arm limits remain 40 requests, 900 seconds, and a $5 soft observed-cost ceiling. Both arms use GPT-6 Astra at medium thinking with the same Docker-backed tools; Jev 1.13.0 is pinned. No expected savings are assumed. See the [batch manifest/report](../../experiments/verified-10-20260917/README.md) for the full protocol.
+`run` executes two pairs concurrently, then performs official evaluation in a separate trusted Docker helper. Each arm uses GPT-6 Astra at medium thinking; Jev 1.13.0 is pinned for the hybrid. Limits are 40 requests, 900 seconds, and a $5 soft observed-LLM-cost ceiling per arm. The ceiling is checked between requests, not a hard billing limit.
 
-Raw artifacts: `.jevcoder/bench/verified-10-20260917/`. Public summaries and patches: `experiments/verified-10-20260917/`. Use `python scripts/bench/batch.py report` to regenerate the report without model calls, or `evaluate` to rerun only the official evaluator on existing patches. The evaluator installs SWE-bench 4.1.0 through the verified Microsoft package-feed mirror used in this environment. No credentials or evaluator data are mounted into worker containers.
+Existing arm directories are skipped rather than replayed. Published experiment IDs cannot be reused for fresh preparation. Infrastructure failures and missing patches remain in the report; no sample is replaced based on its outcome. Do not modify the frozen implementation during a batch.
 
-Requirements: Python 3.10+, Node/Pi dependencies (`npm install --ignore-scripts`), Docker with Linux containers, existing Pi Copilot authentication with GPT-6 Astra access, and a Jev key. No Python packages are required for the host runner or summarizer. The official evaluator uses `swebench==4.1.0` in a separate Python container.
+## Execution and evaluation boundaries
 
-## Prepare and generate
+Each arm gets a fresh container and Pi session at the exact base commit. Only the issue description is supplied to the agent. No host credentials, Docker socket, evaluation snapshot, or other arm's artifacts are mounted in workers. Network is disabled in the worker, with 4 CPUs and 6 GB memory; model/auth HTTP requests occur in the host Pi process.
 
-From the repository root:
+The tools retain Pi's native read/edit/write/bash implementations and prompt metadata through pluggable Docker operations. Known full-output files produced by the shell tool can be read locally; arbitrary host paths cannot. Shell commands can still bundle editing/testing, so this is container isolation, not a proof of fine-grained action semantics.
 
-```powershell
-python scripts/bench/prepare.py
-docker pull swebench/sweb.eval.x86_64.astropy_1776_astropy-12907:latest
-$env:TYPESAFE_API_KEY = (Get-Content -Raw .\jev_key.txt).Trim()
-python scripts/bench/run.py
-```
+The trusted evaluator receives the Docker socket and private artifact directory. It installs `swebench==4.1.0` through the verified Microsoft package-feed mirror used in this environment. These mounts are never passed to agent workers. All generation precedes evaluation, and no agent is rerun after receiving grading feedback. Worker/evaluator containers are removed afterward; images remain cached.
 
-The local runner also sets the environment from this repository's ignored `jev_key.txt` if `TYPESAFE_API_KEY` is unset; this convenience is **only in the experiment launcher**, not the extension. The variable is not passed into worker containers.
+Use `python scripts/bench/batch.py evaluate` to rerun only the official evaluator on existing predictions. No Python packages are required for the host runner or summarizer.
 
-`prepare.py` fetches the first Verified row, asserts the expected instance ID, and saves an evaluator-only snapshot. It snapshots cached Pi pricing and the pinned Jev price; verify published prices before a new experiment. The source snapshot contains withheld patches/tests and must never be exposed to the agents.
+## Accounting and tests
 
-`run.py` executes baseline then JevCoder, or accepts one arm (`baseline` / `jevcoder`). It refuses to overwrite an existing arm directory. Archive the existing `.jevcoder/bench/astropy-12907/` directory before a fresh repetition. Do not replace the checked-in September 17 report with a later run under the same name.
-
-Each arm gets a fresh container and Pi session. Only the problem statement is sent as the task; no artifact directory is mounted in a worker. The tools retain Pi's read/edit/write/bash implementations through pluggable Docker operations. The snapshot's base commit and a clean worktree are checked before inference; prebuilt ignored build artifacts are retained. The generated diff, native JSON events, session, timings, and process outcome are captured. Worker containers are removed afterward.
-
-The normal tools can access the container filesystem; this is container isolation, not a per-command proof of safety. Agent commands run without network or a host socket/mount. The host-side trusted backend necessarily invokes Docker itself. Shell timeout is enforced remotely, and the runner stops the worker on a whole-run timeout.
-
-## Evaluate separately
-
-Create a trusted evaluator with the raw artifact directory mounted at `/control` and the Docker socket mounted at `/var/run/docker.sock`. **Never give these mounts to the agents.** Install `swebench==4.1.0` (using your organization's verified package mirror if required). Run from `/control`, once per arm:
+The report counts each finalized assistant usage record once, applies cache/long-context rates per request, cross-checks Pi's cost estimates, and adds Jev input cost. Missing/aborted usage is flagged as unknown, not free. The audit extension records Jev usage before decision validation. Client logs cannot reveal completely hidden provider-internal attempts or replace billing receipts.
 
 ```bash
-python -m swebench.harness.run_evaluation \
-  --dataset_name /control/instances.json \
-  --predictions_path /control/baseline/predictions.jsonl \
-  --instance_ids astropy__astropy-12907 \
-  --max_workers 1 --timeout 300 \
-  --cache_level instance --clean false \
-  --run_id jevcoder-comparison-baseline
-```
-
-Repeat with `jevcoder/predictions.jsonl` and run ID `jevcoder-comparison-jevcoder`. This uses the existing SWE-bench image and copies patches into fresh evaluation containers; the evaluator's `/control` mount is not passed to them. Evaluation reports go under `/control/logs/run_evaluation/`.
-
-For a negative control, submit a patch that only adds an inert text file, with `model_name_or_path: "negative-control"`, using run ID `jevcoder-comparison-negative-control`. The source-code bug should remain unresolved. The retained run includes this control and the exact evaluator dependency versions. Remove the evaluator container after saving results; keep the cached base image.
-
-## Summarize and test
-
-```bash
-python scripts/bench/summarize.py
 python -m unittest discover -s tests/bench -v
 npm test
 npm run typecheck
 ```
 
-The summarizer is intentionally specific to this retained sample/report path. It counts finalized assistant messages once, prices each request separately (including long-context tiers and cache writes), cross-checks Pi estimates, and adds Jev input cost. The audit extension records Jev usage before decision validation, so a malformed decision with returned usage is not silently omitted. Missing/aborted usage is marked unknown rather than free. Client logs cannot reveal completely hidden provider-internal attempts or replace billing receipts.
-
-Pricing snapshots and raw artifacts stay under `.jevcoder/bench/astropy-12907/`; only summaries and model-generated patches are copied into `experiments/`. No reference patch or test patch is copied into public experiment artifacts.
+No keys, private transcripts, reference patches, or test patches are copied into the committed experiment artifacts. Metadata provenance fields in the retained manifest/results and frozen code are kept unchanged for auditability.

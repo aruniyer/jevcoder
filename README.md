@@ -118,7 +118,7 @@ Pi's `context` hook is non-persistent. JevCoder therefore keeps a run-local list
 
 A model change, active-tool change, tool-schema/system-prefix change, or rewrite of earlier conversation messages stops the run. JevCoder never restores old schemas over a revocation. Restart after intentional configuration changes or compaction.
 
-Regression tests cover byte-identical serialized tool arrays and append-only inputs through Pi's actual OpenAI Responses converters (`read → edit → finish`), plus gates, retries, and lifecycle cleanup. **This removes identified sources of prefix churn; it does not guarantee cache hits or cost savings.** Provider thresholds, TTL, cache keys, request serialization, and later-loaded extensions can still affect caching. A [small read-only live smoke check](experiments/cache-smoke-v1/README.md) confirmed cache reuse (2,472 and 4,144 cache-read tokens on the last two requests), with an identical prefix fingerprint across four requests. The smoke check was followed by a [fresh paired 10-instance comparison](experiments/verified-10-cache-v1-20260917/README.md): both modes solved the same 8/10 cases, with 38% lower recorded-usage cost for the cache-stable version. See the qualifications below.
+Regression tests cover byte-identical serialized tool arrays and append-only inputs through Pi's actual OpenAI Responses converters (`read → edit → finish`), plus gates, retries, and lifecycle cleanup. **This removes identified sources of prefix churn; it does not guarantee cache hits or cost savings.** Provider thresholds, TTL, cache keys, request serialization, and later-loaded extensions can still affect caching. The retained [paired 10-instance comparison](experiments/verified-10-cache-v1-20260917/README.md) measured 87.4% cache-read input for JevCoder: both modes solved the same 8/10 cases, with 38% lower recorded-usage cost for the cache-stable version. See the qualifications below.
 
 ## Traces and limits
 
@@ -155,15 +155,6 @@ npm run typecheck
 
 Runtime loading through Pi needs no separate build. Tests use Node's TypeScript stripping (Node 24 recommended); they make no paid API calls. `npm pack --dry-run` verifies the package allowlist excludes credentials and traces.
 
-Before the cache-stability change, live smoke tests passed with real Jev and Pi's existing Copilot authentication:
-
-- **Claude Haiku 4.5:** `read → finish`; correctly reported a literal from a temporary C# file.
-- **GPT-5 mini:** `read → code_editing → read → finish`; changed `a - b` to `a + b` in a temporary C# file and read it back. No build/tests were run on that fixture.
-
-These verify integration and a tiny editing task, not broader coding-agent quality or a speed/cost advantage over normal Pi.
-
-A [single SWE-bench Verified comparison](experiments/astropy-12907-2026-09-17/README.md) with Copilot GPT-6 Astra also passed official evaluation in both arms. Estimated costs were $0.46024 for plain Pi and $0.21711 including Jev. **This is exploratory:** the Jev arm bundled editing/testing into a shell call, and the baseline performed broader verification. See the report for accounting, patches, tool-prompt differences, and other limitations.
-
 ## Layout
 
 ```text
@@ -176,26 +167,18 @@ scripts/bench/              Optional Docker experiment runner and cost accountin
 experiments/                Results, generated patches, and frozen benchmark source snapshots
 ```
 
-## 10-instance experiments
+## Latest 10-instance experiment
 
-### Cache-stable version (0.2.0)
-
-The [fresh paired rerun](experiments/verified-10-cache-v1-20260917/README.md) used the exact same dataset snapshot with new generations in both arms. Both solved the same **8/10** cases. Total recorded-usage estimates, including failed cases and Jev, were **$4.76 for plain Pi vs $2.95 for JevCoder (38% lower, not halved)**. Hybrid cache-read input rose to **87.4%**, versus 91.1% for its fresh baseline.
+Only the latest cache-stable experiment is retained in this repository. The [paired comparison](experiments/verified-10-cache-v1-20260917/README.md) used the same fixed dataset snapshot with fresh generations in both arms. Both solved the same **8/10** cases. Total recorded-usage estimates, including failed cases and Jev, were **$4.76 for plain Pi vs $2.95 for JevCoder (38% lower, not halved)**. Hybrid cache-read input rose to **87.4%**, versus 91.1% for its fresh baseline.
 
 One hybrid run ended after a Jev HTTP 400 with unknown usage. Much of the dollar difference came from that unresolved Astropy case; on the eight mutually solved cases alone, spending was **22.5% lower**. These are small-sample consumption estimates on a known development sample, not exact bills or a full-benchmark savings guarantee. All generated patches, source/configuration hashes, token/cost breakdowns, and official grading are retained in the report.
 
-Each paired batch includes a `source-snapshot/` directory whose inference-source hashes match its manifest. Those archives preserve the code actually used even as the current implementation evolves. API keys, full private session traces, and evaluator-only dataset snapshots are deliberately excluded from Git.
-
-### Before the cache fix
-
-The **pre-cache-fix** [seeded 10-instance SWE-bench Verified comparison](experiments/verified-10-20260917/README.md) is complete: **both arms solved the same 8/10**, but JevCoder's recorded-usage estimate was **$8.44 vs $5.14** for plain Pi (**64% higher**, not halved). It used fewer LLM requests and about 33% less summed agent time, but had almost no cache reads and substantially more cache writes. Three hybrid runs have unknown usage from error/cancelled requests; see the report rather than interpreting these as exact billing totals.
-
-The shared adapter now preserves native tool prompt metadata. The earlier pilot is retained separately and is not representative of this batch's aggregate result.
+The retained batch includes a `source-snapshot/` directory whose inference-source hashes match its manifest. This archive preserves the code actually used even as the current implementation evolves. API keys, full private session traces, and evaluator-only dataset snapshots are deliberately excluded from Git.
 
 ## Next experiments
 
 1. Diagnose the remaining router HTTP 400 on larger contexts without concealing or dropping failed runs.
-2. Validate the cache-stable design on a larger, previously unused sample, with repeated trials and all costs/failures included. Preserve the existing pilot and paired comparisons; don't overwrite their results.
+2. Validate the cache-stable design on a larger, previously unused sample, with repeated trials and all costs/failures included. Use a new experiment ID rather than overwriting the retained results.
 3. Measure routing failures separately from argument/edit failures and verification failures.
 4. Consider `analyze`, confidence-gated fallback, bounded editor delegation, and compaction only after understanding the measured bottlenecks.
 

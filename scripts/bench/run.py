@@ -5,13 +5,11 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import sys
 import tempfile
 import time
 import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
-CONTROL = ROOT / ".jevcoder/bench/astropy-12907"
 MODEL = "github-copilot/gpt-6-astra"
 CLI = ROOT / "node_modules/@earendil-works/pi-coding-agent/dist/cli.js"
 
@@ -32,9 +30,8 @@ def source_hashes():
     return {f: hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in files}
 
 
-def run_arm(arm, control=None, instance=None, expected_hashes=None):
-    control = Path(control) if control is not None else CONTROL
-    instance = instance or json.loads((control / "instance.json").read_text(encoding="utf-8"))
+def run_arm(arm, control, instance, expected_hashes=None):
+    control = Path(control)
     directory = control / arm
     directory.mkdir(parents=True, exist_ok=False)  # Never silently replay a paid run.
     workspace = Path(tempfile.mkdtemp(prefix="jevcoder-bench-workspace-"))
@@ -123,7 +120,4 @@ def run_arm(arm, control=None, instance=None, expected_hashes=None):
 
 
 if __name__ == "__main__":
-    for arm in sys.argv[1:] or ["baseline", "jevcoder"]:
-        if arm not in ("baseline", "jevcoder"):
-            raise SystemExit("Expected baseline or jevcoder")
-        run_arm(arm)
+    raise SystemExit("Use python scripts/bench/batch.py run to execute a batch.")
