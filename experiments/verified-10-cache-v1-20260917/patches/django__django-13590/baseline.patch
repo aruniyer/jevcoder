@@ -1,0 +1,69 @@
+diff --git a/django/db/models/sql/query.py b/django/db/models/sql/query.py
+index 4648daf395..92fad5d044 100644
+--- a/django/db/models/sql/query.py
++++ b/django/db/models/sql/query.py
+@@ -1077,10 +1077,14 @@ class Query(BaseExpression):
+         elif isinstance(value, (list, tuple)):
+             # The items of the iterable may be expressions and therefore need
+             # to be resolved independently.
+-            return type(value)(
++            values = (
+                 self.resolve_lookup_value(sub_value, can_reuse, allow_joins)
+                 for sub_value in value
+             )
++            # Named tuples require positional arguments for their constructor.
++            if hasattr(value, '_fields'):
++                return type(value)(*values)
++            return type(value)(values)
+         return value
+ 
+     def solve_lookup_type(self, lookup):
+diff --git a/tests/lookup/tests.py b/tests/lookup/tests.py
+index 9094542808..01bef7552e 100644
+--- a/tests/lookup/tests.py
++++ b/tests/lookup/tests.py
+@@ -1,11 +1,12 @@
+ import collections.abc
++from collections import namedtuple
+ from datetime import datetime
+ from math import ceil
+ from operator import attrgetter
+ 
+ from django.core.exceptions import FieldError
+ from django.db import connection, models
+-from django.db.models import Exists, Max, OuterRef
++from django.db.models import Exists, F, Max, OuterRef
+ from django.db.models.functions import Substr
+ from django.test import TestCase, skipUnlessDBFeature
+ from django.test.utils import isolate_apps
+@@ -103,6 +104,30 @@ class LookupTests(TestCase):
+             ]
+         )
+ 
++    def test_range(self):
++        bounds = (self.a2.pk, self.a4.pk)
++        Range = namedtuple('Range', ['near', 'far'])
++        for value in (bounds, list(bounds), Range(*bounds)):
++            with self.subTest(value=value):
++                self.assertQuerysetEqual(
++                    Article.objects.filter(pk__range=value),
++                    [self.a2, self.a3, self.a4],
++                    transform=lambda article: article,
++                    ordered=False,
++                )
++
++    def test_range_expressions(self):
++        bounds = (F('pk'), F('pk'))
++        Range = namedtuple('Range', ['near', 'far'])
++        for value in (bounds, list(bounds), Range(*bounds)):
++            with self.subTest(value=value):
++                self.assertQuerysetEqual(
++                    Article.objects.filter(pk__range=value),
++                    [self.a1, self.a2, self.a3, self.a4, self.a5, self.a6, self.a7],
++                    transform=lambda article: article,
++                    ordered=False,
++                )
++
+     def test_iterator(self):
+         # Each QuerySet gets iterator(), which is a generator that "lazily"
+         # returns results using database-level iteration.

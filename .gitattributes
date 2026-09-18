@@ -1,0 +1,5 @@
+* text=auto eol=lf
+# Preserve unified patches as LF text; blank context lines intentionally contain a space.
+*.patch text eol=lf whitespace=-blank-at-eol
+# Frozen benchmark sources must retain the exact bytes identified by their manifests.
+experiments/**/source-snapshot/** -text -whitespace

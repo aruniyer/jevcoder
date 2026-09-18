@@ -1,0 +1,72 @@
+diff --git a/django/db/models/enums.py b/django/db/models/enums.py
+index bbe362a6ab..1c73ab21b2 100644
+--- a/django/db/models/enums.py
++++ b/django/db/models/enums.py
+@@ -60,7 +60,9 @@ class ChoicesMeta(enum.EnumMeta):
+ 
+ class Choices(enum.Enum, metaclass=ChoicesMeta):
+     """Class for creating enumerated choices."""
+-    pass
++
++    def __str__(self):
++        return str(self.value)
+ 
+ 
+ class IntegerChoices(int, Choices):
+diff --git a/tests/model_enums/tests.py b/tests/model_enums/tests.py
+index 6b4bd6e7fd..6586f92f6a 100644
+--- a/tests/model_enums/tests.py
++++ b/tests/model_enums/tests.py
+@@ -47,6 +47,7 @@ class ChoicesTests(SimpleTestCase):
+         self.assertEqual(Suit.values, [1, 2, 3, 4])
+         self.assertEqual(Suit.names, ['DIAMOND', 'SPADE', 'HEART', 'CLUB'])
+ 
++        self.assertEqual(str(Suit.DIAMOND), '1')
+         self.assertEqual(repr(Suit.DIAMOND), '<Suit.DIAMOND: 1>')
+         self.assertEqual(Suit.DIAMOND.label, 'Diamond')
+         self.assertEqual(Suit.DIAMOND.value, 1)
+@@ -88,6 +89,7 @@ class ChoicesTests(SimpleTestCase):
+         self.assertEqual(YearInSchool.values, ['FR', 'SO', 'JR', 'SR', 'GR'])
+         self.assertEqual(YearInSchool.names, ['FRESHMAN', 'SOPHOMORE', 'JUNIOR', 'SENIOR', 'GRADUATE'])
+ 
++        self.assertEqual(str(YearInSchool.FRESHMAN), 'FR')
+         self.assertEqual(repr(YearInSchool.FRESHMAN), "<YearInSchool.FRESHMAN: 'FR'>")
+         self.assertEqual(YearInSchool.FRESHMAN.label, 'Freshman')
+         self.assertEqual(YearInSchool.FRESHMAN.value, 'FR')
+diff --git a/tests/model_fields/test_charfield.py b/tests/model_fields/test_charfield.py
+index cf3ce0c4c5..379b337859 100644
+--- a/tests/model_fields/test_charfield.py
++++ b/tests/model_fields/test_charfield.py
+@@ -34,7 +34,11 @@ class TestCharField(TestCase):
+             F = 'Festival!'
+ 
+         p1 = Post.objects.create(title=Event.C, body=Event.F)
++        self.assertEqual(str(p1.title), 'Carnival!')
++        self.assertEqual(str(p1.body), 'Festival!')
+         p1.refresh_from_db()
++        self.assertEqual(str(p1.title), 'Carnival!')
++        self.assertEqual(str(p1.body), 'Festival!')
+         self.assertEqual(p1.title, 'Carnival!')
+         self.assertEqual(p1.body, 'Festival!')
+         self.assertEqual(p1.title, Event.C)
+diff --git a/tests/model_fields/test_integerfield.py b/tests/model_fields/test_integerfield.py
+index 606d71057a..deca66aa6c 100644
+--- a/tests/model_fields/test_integerfield.py
++++ b/tests/model_fields/test_integerfield.py
+@@ -21,6 +21,16 @@ class IntegerFieldTests(TestCase):
+         internal_type = field.get_internal_type()
+         return connection.ops.integer_field_range(internal_type)
+ 
++    def test_assignment_from_choice_enum(self):
++        class Choice(models.IntegerChoices):
++            A = 1, 'A'
++
++        instance = self.model.objects.create(value=Choice.A)
++        self.assertEqual(str(instance.value), '1')
++        instance.refresh_from_db()
++        self.assertEqual(str(instance.value), '1')
++        self.assertEqual(instance.value, Choice.A)
++
+     def test_documented_range(self):
+         """
+         Values within the documented safe range pass validation, and can be

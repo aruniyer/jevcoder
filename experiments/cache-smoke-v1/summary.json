@@ -1,0 +1,80 @@
+{
+  "model": "github-copilot/gpt-6-astra",
+  "cacheMode": "stable-prefix-v1",
+  "exitCode": 0,
+  "workspaceUnchanged": true,
+  "actions": [
+    "tool:read",
+    "tool:read",
+    "tool:read",
+    "finish"
+  ],
+  "distinctPrefixHashes": 1,
+  "llmUsage": [
+    {
+      "input": 803,
+      "output": 27,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 830,
+      "cost": {
+        "input": 0.00803,
+        "output": 0.00135,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.009380000000000001
+      }
+    },
+    {
+      "input": 3,
+      "output": 27,
+      "cacheRead": 0,
+      "cacheWrite": 2472,
+      "reasoning": 0,
+      "totalTokens": 2502,
+      "cost": {
+        "input": 3.0000000000000004e-05,
+        "output": 0.00135,
+        "cacheRead": 0,
+        "cacheWrite": 0.0309,
+        "total": 0.03228
+      }
+    },
+    {
+      "input": 3,
+      "output": 27,
+      "cacheRead": 2472,
+      "cacheWrite": 1672,
+      "reasoning": 0,
+      "totalTokens": 4174,
+      "cost": {
+        "input": 3.0000000000000004e-05,
+        "output": 0.00135,
+        "cacheRead": 0.002472,
+        "cacheWrite": 0.0209,
+        "total": 0.024752
+      }
+    },
+    {
+      "input": 3,
+      "output": 51,
+      "cacheRead": 4144,
+      "cacheWrite": 1633,
+      "reasoning": 0,
+      "totalTokens": 5831,
+      "cost": {
+        "input": 3.0000000000000004e-05,
+        "output": 0.00255,
+        "cacheRead": 0.004144,
+        "cacheWrite": 0.0204125,
+        "total": 0.0271365
+      }
+    }
+  ],
+  "llmCostUsd": 0.0935485,
+  "jevInputTokens": 17298,
+  "jevCostUsd": 0.0007265160000000001,
+  "final": "- `first.txt`: `cache-first-17`\n- `second.txt`: `cache-second-29`\n- `third.txt`: `cache-third-41`\n\nRead all three files using separate read calls. No files were modified.",
+  "allMarkersPresent": true
+}

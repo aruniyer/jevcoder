@@ -1,0 +1,122 @@
+diff --git a/sphinx/directives/other.py b/sphinx/directives/other.py
+index 35e16e623..fef05cd87 100644
+--- a/sphinx/directives/other.py
++++ b/sphinx/directives/other.py
+@@ -116,7 +116,7 @@ class TocTree(SphinxDirective):
+                         break
+                 # absolutize filenames
+                 docname = docname_join(self.env.docname, docname)
+-                if url_re.match(ref) or ref == 'self':
++                if url_re.match(ref) or ref in ('self', 'genindex', 'modindex', 'search'):
+                     toctree['entries'].append((title, ref))
+                 elif docname not in self.env.found_docs:
+                     if excluded(self.env.doc2path(docname, False)):
+diff --git a/sphinx/environment/adapters/toctree.py b/sphinx/environment/adapters/toctree.py
+index 9678e3c7c..f30d08ec4 100644
+--- a/sphinx/environment/adapters/toctree.py
++++ b/sphinx/environment/adapters/toctree.py
+@@ -125,6 +125,17 @@ class TocTree:
+                         para = addnodes.compact_paragraph('', '', reference)
+                         item = nodes.list_item('', para)
+                         toc = nodes.bullet_list('', item)
++                    elif ref in ('genindex', 'modindex', 'search'):
++                        # Generated pages have labels, but no document TOCs.
++                        std = self.env.get_domain('std')
++                        ref, anchor, label = std.labels[ref]
++                        reference = nodes.reference('', '', internal=True,
++                                                    refuri=ref,
++                                                    anchorname='#' + anchor if anchor else '',
++                                                    *[nodes.Text(title or label)])
++                        para = addnodes.compact_paragraph('', '', reference)
++                        item = nodes.list_item('', para)
++                        toc = nodes.bullet_list('', item)
+                     elif ref == 'self':
+                         # 'self' refers to the document from which this
+                         # toctree originates
+diff --git a/sphinx/environment/collectors/toctree.py b/sphinx/environment/collectors/toctree.py
+index 52a8fd8d1..bf2266c36 100644
+--- a/sphinx/environment/collectors/toctree.py
++++ b/sphinx/environment/collectors/toctree.py
+@@ -172,7 +172,7 @@ class TocTreeCollector(EnvironmentCollector):
+             if depth == 0:
+                 return
+             for (_title, ref) in toctreenode['entries']:
+-                if url_re.match(ref) or ref == 'self':
++                if url_re.match(ref) or ref in ('self', 'genindex', 'modindex', 'search'):
+                     # don't mess with those
+                     continue
+                 elif ref in assigned:
+@@ -256,7 +256,8 @@ class TocTreeCollector(EnvironmentCollector):
+                         _walk_doctree(docname, subnode, secnum)
+                 elif isinstance(subnode, addnodes.toctree):
+                     for _title, subdocname in subnode['entries']:
+-                        if url_re.match(subdocname) or subdocname == 'self':
++                        if (url_re.match(subdocname) or
++                                subdocname in ('self', 'genindex', 'modindex', 'search')):
+                             # don't mess with those
+                             continue
+ 
+diff --git a/tests/test_environment_toctree.py b/tests/test_environment_toctree.py
+index 60a9826fd..e38c403fb 100644
+--- a/tests/test_environment_toctree.py
++++ b/tests/test_environment_toctree.py
+@@ -1,5 +1,7 @@
+ """Test the sphinx.environment.managers.toctree."""
+ 
++from pathlib import Path
++
+ import pytest
+ from docutils import nodes
+ from docutils.nodes import bullet_list, comment, list_item, reference, title
+@@ -81,6 +83,51 @@ def test_process_doc(app):
+     assert 'qux' not in app.env.toctree_includes
+ 
+ 
++@pytest.mark.sphinx('html', testroot='basic', confoverrides={'numfig': True})
++@pytest.mark.parametrize('docname', ['index', 'sub/index'])
++def test_generated_pages_in_toctree(app, warning, docname):
++    if docname != 'index':
++        (Path(app.srcdir) / 'sub').mkdir()
++        (app.srcdir / 'index.rst').write_text(
++            'Root\n====\n\n.. toctree::\n\n   sub/index\n', encoding='utf8')
++    (app.srcdir / (docname + '.rst')).write_text(
++        'Indices and tables\n==================\n\n'
++        '.. py:module:: example\n\n'
++        '.. toctree::\n   :maxdepth: 1\n   :numbered:\n'
++        '   :caption: Indices and tables\n\n'
++        '   genindex\n   modindex\n   search\n'
++        '   General index <genindex>\n'
++        '   Modules <modindex>\n'
++        '   Find <search>\n', encoding='utf8')
++
++    app.build()
++    assert warning.getvalue() == ''
++
++    doctree = app.env.get_doctree(docname)
++    toctree = next(doctree.findall(addnodes.toctree))
++    assert toctree['entries'] == [
++        (None, 'genindex'), (None, 'modindex'), (None, 'search'),
++        ('General index', 'genindex'), ('Modules', 'modindex'), ('Find', 'search')]
++    assert toctree['includefiles'] == []
++    assert app.env.toctree_includes[docname] == []
++
++    resolved = TocTree(app.env).resolve(docname, app.builder, toctree)
++    refs = list(resolved.findall(reference))
++    prefix = '../' if docname != 'index' else ''
++    expected = [
++        ('genindex.html', 'Index'), ('py-modindex.html', 'Module Index'),
++        ('search.html', 'Search Page'), ('genindex.html', 'General index'),
++        ('py-modindex.html', 'Modules'), ('search.html', 'Find')]
++    assert [(ref['refuri'], ref.astext()) for ref in refs] == [
++        (prefix + uri, text) for uri, text in expected]
++    assert all(ref['internal'] for ref in refs)
++
++    html = (app.outdir / (docname + '.html')).read_text(encoding='utf8')
++    for uri, text in expected:
++        assert 'href="%s%s">%s</a>' % (prefix, uri, text) in html
++        assert (app.outdir / uri).exists()
++
++
+ @pytest.mark.sphinx('dummy', testroot='toctree-glob')
+ def test_glob(app):
+     includefiles = ['foo', 'bar/index', 'bar/bar_1', 'bar/bar_2',

@@ -1,0 +1,42 @@
+{
+  "astropy__astropy-13398": {
+    "requests_with_prefix_record": 15,
+    "distinct_prefixes": 1
+  },
+  "django__django-11964": {
+    "requests_with_prefix_record": 8,
+    "distinct_prefixes": 1
+  },
+  "django__django-13590": {
+    "requests_with_prefix_record": 9,
+    "distinct_prefixes": 1
+  },
+  "django__django-13925": {
+    "requests_with_prefix_record": 11,
+    "distinct_prefixes": 1
+  },
+  "django__django-14539": {
+    "requests_with_prefix_record": 9,
+    "distinct_prefixes": 1
+  },
+  "matplotlib__matplotlib-26342": {
+    "requests_with_prefix_record": 9,
+    "distinct_prefixes": 1
+  },
+  "pydata__xarray-6992": {
+    "requests_with_prefix_record": 11,
+    "distinct_prefixes": 1
+  },
+  "pytest-dev__pytest-5809": {
+    "requests_with_prefix_record": 9,
+    "distinct_prefixes": 1
+  },
+  "sphinx-doc__sphinx-10673": {
+    "requests_with_prefix_record": 20,
+    "distinct_prefixes": 1
+  },
+  "sympy__sympy-16450": {
+    "requests_with_prefix_record": 12,
+    "distinct_prefixes": 1
+  }
+}

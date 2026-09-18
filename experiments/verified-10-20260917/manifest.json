@@ -1,0 +1,159 @@
+{
+  "batch": "verified-10-20260917",
+  "created_at": "2026-09-17T11:03:17.895954+00:00",
+  "dataset": "princeton-nlp/SWE-bench_Verified",
+  "split": "test",
+  "seed": 20260917,
+  "offsets": [
+    3,
+    67,
+    122,
+    134,
+    159,
+    285,
+    316,
+    336,
+    386,
+    454
+  ],
+  "pilot_excluded": "astropy__astropy-12907",
+  "cases": [
+    {
+      "offset": 3,
+      "instance_id": "astropy__astropy-13398",
+      "repo": "astropy/astropy",
+      "base_commit": "6500928dc0e57be8f06d1162eacc3ba5e2eff692",
+      "image": "swebench/sweb.eval.x86_64.astropy_1776_astropy-13398:latest",
+      "order": [
+        "baseline",
+        "jevcoder"
+      ]
+    },
+    {
+      "offset": 67,
+      "instance_id": "django__django-11964",
+      "repo": "django/django",
+      "base_commit": "fc2b1cc926e34041953738e58fa6ad3053059b22",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-11964:latest",
+      "order": [
+        "jevcoder",
+        "baseline"
+      ]
+    },
+    {
+      "offset": 122,
+      "instance_id": "django__django-13590",
+      "repo": "django/django",
+      "base_commit": "755dbf39fcdc491fe9b588358303e259c7750be4",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-13590:latest",
+      "order": [
+        "baseline",
+        "jevcoder"
+      ]
+    },
+    {
+      "offset": 134,
+      "instance_id": "django__django-13925",
+      "repo": "django/django",
+      "base_commit": "0c42cdf0d2422f4c080e93594d5d15381d6e955e",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-13925:latest",
+      "order": [
+        "jevcoder",
+        "baseline"
+      ]
+    },
+    {
+      "offset": 159,
+      "instance_id": "django__django-14539",
+      "repo": "django/django",
+      "base_commit": "6a5ef557f80a8eb6a758ebe99c8bb477ca47459e",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-14539:latest",
+      "order": [
+        "baseline",
+        "jevcoder"
+      ]
+    },
+    {
+      "offset": 285,
+      "instance_id": "matplotlib__matplotlib-26342",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "2aee6ccd7c7e1f8d282c1e7579f4ee546b838542",
+      "image": "swebench/sweb.eval.x86_64.matplotlib_1776_matplotlib-26342:latest",
+      "order": [
+        "jevcoder",
+        "baseline"
+      ]
+    },
+    {
+      "offset": 316,
+      "instance_id": "pydata__xarray-6992",
+      "repo": "pydata/xarray",
+      "base_commit": "45c0a114e2b7b27b83c9618bc05b36afac82183c",
+      "image": "swebench/sweb.eval.x86_64.pydata_1776_xarray-6992:latest",
+      "order": [
+        "baseline",
+        "jevcoder"
+      ]
+    },
+    {
+      "offset": 336,
+      "instance_id": "pytest-dev__pytest-5809",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "8aba863a634f40560e25055d179220f0eefabe9a",
+      "image": "swebench/sweb.eval.x86_64.pytest-dev_1776_pytest-5809:latest",
+      "order": [
+        "jevcoder",
+        "baseline"
+      ]
+    },
+    {
+      "offset": 386,
+      "instance_id": "sphinx-doc__sphinx-10673",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "f35d2a6cc726f97d0e859ca7a0e1729f7da8a6c8",
+      "image": "swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-10673:latest",
+      "order": [
+        "baseline",
+        "jevcoder"
+      ]
+    },
+    {
+      "offset": 454,
+      "instance_id": "sympy__sympy-16450",
+      "repo": "sympy/sympy",
+      "base_commit": "aefdd023dc4f73c441953ed51f5f05a076f0862f",
+      "image": "swebench/sweb.eval.x86_64.sympy_1776_sympy-16450:latest",
+      "order": [
+        "jevcoder",
+        "baseline"
+      ]
+    }
+  ],
+  "dataset_snapshot_sha256": "19733f91ea4e8e6e99089a222564dd20e24add402b273a396fa5b5a0dd6cd70a",
+  "implementation_sha256": {
+    "extensions/jev.ts": "0bab180c2bf5ce2ddb106b98fca08954dee40879d66713ef9c493020e8b5bd11",
+    "extensions/jevcoder.ts": "b669cd240b8c99d31eb9bdf9d167f1caaed51f590e7b4933c21c5138eca148ea",
+    "scripts/bench/docker-tools.ts": "744d779c8aa599e6708357bf3f05f54683e2c9f78f15d189053b642f070e142f",
+    "scripts/bench/accounting.ts": "5451353dac689c48e381180d2e5115d67ddd6b566644be9fad39ce969fa6e83b",
+    "scripts/bench/run.py": "acafd491d10558d32aa567b24af97bbcc71608a80f652ea4145f2cfb65f244a5"
+  },
+  "pi_version": "0.85.1",
+  "harness_version": "4.1.0",
+  "model": "github-copilot/gpt-6-astra",
+  "thinking": "medium",
+  "pair_concurrency": 2,
+  "max_requests_per_arm": 40,
+  "wall_time_limit_seconds_per_arm": 900,
+  "soft_llm_cost_limit_usd_per_arm": 5,
+  "shell_bundling": "allowed in both arms",
+  "native_tool_prompt_metadata": "preserved",
+  "worker_network": "none",
+  "worker_cpus": 4,
+  "worker_memory": "6g",
+  "primary_metrics": [
+    "total estimated cost including all failed runs and Jev",
+    "resolved / 10 per arm",
+    "total cost / resolved issues"
+  ],
+  "no_replacement_or_paid_retries": true
+}

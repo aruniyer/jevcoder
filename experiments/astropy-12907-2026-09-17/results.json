@@ -1,0 +1,268 @@
+{
+  "dataset": "princeton-nlp/SWE-bench_Verified",
+  "split": "test",
+  "row_offset": 0,
+  "instance_id": "astropy__astropy-12907",
+  "base_commit": "d16bfe05a744909de4b27f5875fe0d4ed41ce607",
+  "instance_snapshot_sha256": "64e4d96a0130291855dda299892c72786a69ee0fd03e42c41db4112cbdc25af1",
+  "harness_version": "4.1.0",
+  "model": "github-copilot/gpt-6-astra",
+  "thinking": "medium",
+  "pricing": {
+    "capturedAt": "2026-09-17T10:36:47.780Z",
+    "piVersion": "0.85.1",
+    "provider": "github-copilot",
+    "model": "gpt-6-astra",
+    "api": "openai-responses",
+    "costPerMillionTokens": {
+      "input": 10,
+      "output": 50,
+      "cacheRead": 1,
+      "cacheWrite": 12.5,
+      "tiers": [
+        {
+          "inputTokensAbove": 272000,
+          "input": 20,
+          "output": 75,
+          "cacheRead": 2,
+          "cacheWrite": 25
+        }
+      ]
+    },
+    "source": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing",
+    "jev": {
+      "model": "jev-1.13.0",
+      "inputPerMillionTokens": 0.042,
+      "outputPerMillionTokens": 0,
+      "source": "https://docs.typesafe.ai/models"
+    }
+  },
+  "runs": [
+    {
+      "arm": "baseline",
+      "resolved": true,
+      "evaluation": {
+        "patch_is_None": false,
+        "patch_exists": true,
+        "patch_successfully_applied": true,
+        "resolved": true,
+        "tests_status": {
+          "FAIL_TO_PASS": {
+            "success": [
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model6-result6]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model9-result9]"
+            ],
+            "failure": []
+          },
+          "PASS_TO_PASS": {
+            "success": [
+              "astropy/modeling/tests/test_separable.py::test_coord_matrix",
+              "astropy/modeling/tests/test_separable.py::test_cdot",
+              "astropy/modeling/tests/test_separable.py::test_cstack",
+              "astropy/modeling/tests/test_separable.py::test_arith_oper",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model0-result0]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model1-result1]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model2-result2]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model3-result3]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model4-result4]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model5-result5]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model7-result7]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model8-result8]",
+              "astropy/modeling/tests/test_separable.py::test_custom_model_separable"
+            ],
+            "failure": []
+          },
+          "FAIL_TO_FAIL": {
+            "success": [],
+            "failure": []
+          },
+          "PASS_TO_FAIL": {
+            "success": [],
+            "failure": []
+          }
+        }
+      },
+      "elapsed_seconds": 90.54699999999866,
+      "llm_requests": 10,
+      "llm_http_statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "llm_tokens": {
+        "input": 30,
+        "output": 1507,
+        "cacheRead": 84276,
+        "cacheWrite": 24025,
+        "reasoning": 171,
+        "totalTokens": 109838
+      },
+      "llm_cost_usd": 0.4602385,
+      "jev_requests": 0,
+      "jev_tokens": {
+        "input": 0,
+        "output": 0
+      },
+      "jev_cost_usd": 0.0,
+      "estimated_total_cost_usd": 0.4602385,
+      "jev_latency_ms": 0,
+      "unaccounted_usage": [],
+      "tool_calls": [
+        "bash",
+        "edit",
+        "edit",
+        "edit",
+        "bash",
+        "edit",
+        "bash",
+        "bash",
+        "bash"
+      ],
+      "jev_actions": [],
+      "patch_sha256": "6bac4e578b5957244e81907a6d2afa2f0836ad2fa66c634e6700946b80ad9381",
+      "prompt_sha256": "0631a479404edf705158212255225a0cd23200c1136919af7b756138be06ce1f",
+      "image_id": "sha256:9b1cabf7bcd83a28469f67e3852d8e2207e90d45aa71f436bb7e600bdee8bae2"
+    },
+    {
+      "arm": "jevcoder",
+      "resolved": true,
+      "evaluation": {
+        "patch_is_None": false,
+        "patch_exists": true,
+        "patch_successfully_applied": true,
+        "resolved": true,
+        "tests_status": {
+          "FAIL_TO_PASS": {
+            "success": [
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model6-result6]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model9-result9]"
+            ],
+            "failure": []
+          },
+          "PASS_TO_PASS": {
+            "success": [
+              "astropy/modeling/tests/test_separable.py::test_coord_matrix",
+              "astropy/modeling/tests/test_separable.py::test_cdot",
+              "astropy/modeling/tests/test_separable.py::test_cstack",
+              "astropy/modeling/tests/test_separable.py::test_arith_oper",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model0-result0]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model1-result1]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model2-result2]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model3-result3]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model4-result4]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model5-result5]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model7-result7]",
+              "astropy/modeling/tests/test_separable.py::test_separable[compound_model8-result8]",
+              "astropy/modeling/tests/test_separable.py::test_custom_model_separable"
+            ],
+            "failure": []
+          },
+          "FAIL_TO_FAIL": {
+            "success": [],
+            "failure": []
+          },
+          "PASS_TO_FAIL": {
+            "success": [],
+            "failure": []
+          }
+        }
+      },
+      "elapsed_seconds": 31.56199999999808,
+      "llm_requests": 3,
+      "llm_http_statuses": [
+        200,
+        200,
+        200
+      ],
+      "llm_tokens": {
+        "input": 9,
+        "output": 878,
+        "cacheRead": 0,
+        "cacheWrite": 13791,
+        "reasoning": 91,
+        "totalTokens": 14678
+      },
+      "llm_cost_usd": 0.2163775,
+      "jev_requests": 3,
+      "jev_tokens": {
+        "input": 17347,
+        "output": 163
+      },
+      "jev_cost_usd": 0.0007285740000000001,
+      "estimated_total_cost_usd": 0.217106074,
+      "jev_latency_ms": 2956,
+      "unaccounted_usage": [],
+      "tool_calls": [
+        "bash",
+        "bash"
+      ],
+      "jev_actions": [
+        "tool:bash",
+        "tool:bash",
+        "finish"
+      ],
+      "patch_sha256": "7731c8ddaf7f323f8a4c735cda4b75352b6ee620d089dea2760067aed0c45a5f",
+      "prompt_sha256": "0631a479404edf705158212255225a0cd23200c1136919af7b756138be06ce1f",
+      "image_id": "sha256:9b1cabf7bcd83a28469f67e3852d8e2207e90d45aa71f436bb7e600bdee8bae2"
+    }
+  ],
+  "negative_control": {
+    "patch_is_None": false,
+    "patch_exists": true,
+    "patch_successfully_applied": true,
+    "resolved": false,
+    "tests_status": {
+      "FAIL_TO_PASS": {
+        "success": [],
+        "failure": [
+          "astropy/modeling/tests/test_separable.py::test_separable[compound_model6-result6]",
+          "astropy/modeling/tests/test_separable.py::test_separable[compound_model9-result9]"
+        ]
+      },
+      "PASS_TO_PASS": {
+        "success": [
+          "astropy/modeling/tests/test_separable.py::test_coord_matrix",
+          "astropy/modeling/tests/test_separable.py::test_cdot",
+          "astropy/modeling/tests/test_separable.py::test_cstack",
+          "astropy/modeling/tests/test_separable.py::test_arith_oper",
+          "astropy/modeling/tests/test_separable.py::test_separable[compound_model0-result0]",
+          "astropy/modeling/tests/test_separable.py::test_separable[compound_model1-result1]",
+          "astropy/modeling/tests/test_separable.py::test_separable[compound_model2-result2]",
+          "astropy/modeling/tests/test_separable.py::test_separable[compound_model3-result3]",
+          "astropy/modeling/tests/test_separable.py::test_separable[compound_model4-result4]",
+          "astropy/modeling/tests/test_separable.py::test_separable[compound_model5-result5]",
+          "astropy/modeling/tests/test_separable.py::test_separable[compound_model7-result7]",
+          "astropy/modeling/tests/test_separable.py::test_separable[compound_model8-result8]",
+          "astropy/modeling/tests/test_separable.py::test_custom_model_separable"
+        ],
+        "failure": []
+      },
+      "FAIL_TO_FAIL": {
+        "success": [],
+        "failure": []
+      },
+      "PASS_TO_FAIL": {
+        "success": [],
+        "failure": []
+      }
+    }
+  },
+  "observed_cost_reduction_percent": 52.82748531467924,
+  "observed_time_reduction_percent": 65.1429644273156,
+  "limitations": [
+    "One instance, one generation per arm, baseline first; no repeated trials or statistical claim.",
+    "Jev selected bash twice, not code_editing; the second shell call combined regression creation, source editing, and testing.",
+    "Baseline did broader verification, including a full modeling-suite run and an original-code comparison; JevCoder ran focused tests only.",
+    "The shared Docker adapter uses standard AgentTool wrappers; it does not preserve optional builtin system-prompt snippets/guidelines. This is not stock local-tool Pi prompting.",
+    "Prompt caching differs: baseline had cache reads; JevCoder had none. No claim of independently controlled provider cache state.",
+    "Costs are published-rate estimates from returned usage, not billing receipts; subscription allowances and infrastructure cost are excluded.",
+    "All observed requests have usage; completely unreported provider-internal attempts cannot be ruled out from client logs."
+  ]
+}

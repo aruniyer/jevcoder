@@ -1,0 +1,65 @@
+diff --git a/django/db/models/base.py b/django/db/models/base.py
+index 4038859cfa..d62a17a03a 100644
+--- a/django/db/models/base.py
++++ b/django/db/models/base.py
+@@ -1299,6 +1299,11 @@ class Model(metaclass=ModelBase):
+     def _check_default_pk(cls):
+         if (
+             cls._meta.pk.auto_created and
++            # Inherited PKs are auto-created parent links, not implicit PKs.
++            not (
++                cls._meta.pk.remote_field and
++                cls._meta.pk.remote_field.parent_link
++            ) and
+             not settings.is_overridden('DEFAULT_AUTO_FIELD') and
+             not cls._meta.app_config._is_default_auto_field_overridden
+         ):
+diff --git a/tests/check_framework/test_model_checks.py b/tests/check_framework/test_model_checks.py
+index d4342ada07..b1df8f8ad8 100644
+--- a/tests/check_framework/test_model_checks.py
++++ b/tests/check_framework/test_model_checks.py
+@@ -408,6 +408,44 @@ class ModelDefaultAutoFieldTests(SimpleTestCase):
+ 
+         self.assertEqual(checks.run_checks(app_configs=self.apps.get_app_configs()), [])
+ 
++    def test_inherited_explicit_pk(self):
++        class Parent(models.Model):
++            id = models.BigAutoField(primary_key=True)
++
++        class Child(Parent):
++            pass
++
++        class Grandchild(Child):
++            pass
++
++        self.assertEqual(checks.run_checks(app_configs=self.apps.get_app_configs()), [])
++
++    def test_inherited_abstract_explicit_pk(self):
++        class Parent(models.Model):
++            id = models.BigAutoField(primary_key=True)
++
++            class Meta:
++                abstract = True
++
++        class Child(Parent):
++            pass
++
++        self.assertEqual(checks.run_checks(app_configs=self.apps.get_app_configs()), [])
++
++    def test_inherited_auto_created_pk(self):
++        class Parent(models.Model):
++            pass
++
++        class Child(Parent):
++            pass
++
++        # Only the parent creates an implicit primary key.
++        self.assertEqual(
++            checks.run_checks(app_configs=self.apps.get_app_configs()),
++            Parent.check(),
++        )
++        self.assertEqual(Child.check(), [])
++
+     @isolate_apps('check_framework.apps.CheckPKConfig', kwarg_name='apps')
+     def test_app_default_auto_field(self, apps):
+         class ModelWithPkViaAppConfig(models.Model):

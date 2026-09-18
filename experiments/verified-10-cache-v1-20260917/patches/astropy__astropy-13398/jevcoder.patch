@@ -1,0 +1,117 @@
+diff --git a/astropy/coordinates/builtin_frames/__init__.py b/astropy/coordinates/builtin_frames/__init__.py
+index 6fd688c28..17f464246 100644
+--- a/astropy/coordinates/builtin_frames/__init__.py
++++ b/astropy/coordinates/builtin_frames/__init__.py
+@@ -49,6 +49,7 @@ from . import icrs_cirs_transforms
+ from . import cirs_observed_transforms
+ from . import icrs_observed_transforms
+ from . import intermediate_rotation_transforms
++from . import itrs_observed_transforms
+ from . import ecliptic_transforms
+ 
+ # Import this after importing other frames, since this requires various
+diff --git a/astropy/coordinates/builtin_frames/itrs_observed_transforms.py b/astropy/coordinates/builtin_frames/itrs_observed_transforms.py
+new file mode 100644
+index 000000000..560e2d547
+--- /dev/null
++++ b/astropy/coordinates/builtin_frames/itrs_observed_transforms.py
+@@ -0,0 +1,99 @@
++# Licensed under a 3-clause BSD style license - see LICENSE.rst
++"""Direct, Earth-fixed transformations between ITRS and observed coordinates."""
++
++import erfa
++import numpy as np
++
++from astropy import units as u
++from astropy.coordinates.baseframe import frame_transform_graph
++from astropy.coordinates.matrix_utilities import matrix_transpose, rotation_matrix
++from astropy.coordinates.representation import SphericalRepresentation
++from astropy.coordinates.transformations import FunctionTransformWithFiniteDifference
++
++from .altaz import AltAz
++from .hadec import HADec
++from .itrs import ITRS
++from .utils import PIOVER2
++
++
++def itrs_to_observed_mat(observed_frame):
++    lon, lat, _ = observed_frame.location.to_geodetic('WGS84')
++    lon_mat = rotation_matrix(lon, 'z')
++    if isinstance(observed_frame, AltAz):
++        # AltAz is left handed: x points north, y east, and z up.
++        return (np.diag([-1., 1., 1.])
++                @ rotation_matrix(90*u.deg - lat, 'y') @ lon_mat)
++    # HADec is left handed, with hour angle increasing westwards.
++    return np.diag([1., -1., 1.]) @ lon_mat
++
++
++def _refraction_astrom(observed_frame):
++    """An ERFA context for local HA/Dec, with refraction but no aberration."""
++    astrom = np.zeros(observed_frame.shape, dtype=erfa.dt_eraASTROM)
++    lat = observed_frame.location.to_geodetic('WGS84').lat.to_value(u.radian)
++    astrom['sphi'] = np.sin(lat)
++    astrom['cphi'] = np.cos(lat)
++    astrom['refa'], astrom['refb'] = erfa.refco(
++        observed_frame.pressure.to_value(u.hPa),
++        observed_frame.temperature.to_value(u.deg_C),
++        observed_frame.relative_humidity.value,
++        observed_frame.obswl.to_value(u.micron))
++    return astrom
++
++
++@frame_transform_graph.transform(
++    FunctionTransformWithFiniteDifference, ITRS, AltAz,
++    finite_difference_frameattr_name=None)
++@frame_transform_graph.transform(
++    FunctionTransformWithFiniteDifference, ITRS, HADec,
++    finite_difference_frameattr_name=None)
++def itrs_to_observed(itrs_coo, observed_frame):
++    # Deliberately do not synchronize obstimes: an ITRS self-transform goes
++    # through an inertial frame, whereas here the position is fixed to Earth.
++    rep = itrs_coo.cartesian
++    if rep.x.unit != u.one:
++        rep = rep - observed_frame.location.get_itrs().cartesian
++
++    if np.any(observed_frame.pressure > 0*u.hPa):
++        # ERFA's observed-coordinate routines can also operate on local
++        # HA/Dec by leaving Earth rotation, polar motion and aberration zero.
++        hadec = HADec(location=observed_frame.location)
++        rep = rep.transform(itrs_to_observed_mat(hadec))
++        sph = rep.represent_as(SphericalRepresentation)
++        az, zen, ha, dec, _ = erfa.atioq(
++            -sph.lon.to_value(u.radian), sph.lat.to_value(u.radian),
++            _refraction_astrom(observed_frame))
++        lon, lat = (az, PIOVER2 - zen) if isinstance(observed_frame, AltAz) else (ha, dec)
++        rep = SphericalRepresentation(lon*u.radian, lat*u.radian, sph.distance)
++    else:
++        rep = rep.transform(itrs_to_observed_mat(observed_frame))
++    return observed_frame.realize_frame(rep)
++
++
++@frame_transform_graph.transform(
++    FunctionTransformWithFiniteDifference, AltAz, ITRS,
++    finite_difference_frameattr_name=None)
++@frame_transform_graph.transform(
++    FunctionTransformWithFiniteDifference, HADec, ITRS,
++    finite_difference_frameattr_name=None)
++def observed_to_itrs(observed_coo, itrs_frame):
++    if np.any(observed_coo.pressure > 0*u.hPa):
++        sph = observed_coo.represent_as(SphericalRepresentation)
++        lon = sph.lon.to_value(u.radian)
++        lat = sph.lat.to_value(u.radian)
++        if isinstance(observed_coo, AltAz):
++            coord_type, lat = 'A', PIOVER2 - lat
++        else:
++            coord_type = 'H'
++        ra, dec = erfa.atoiq(coord_type, lon, lat, _refraction_astrom(observed_coo))
++        rep = SphericalRepresentation(-ra*u.radian, dec*u.radian, sph.distance)
++        hadec = HADec(location=observed_coo.location)
++        mat = itrs_to_observed_mat(hadec)
++        rep = rep.to_cartesian().transform(matrix_transpose(mat))
++    else:
++        mat = itrs_to_observed_mat(observed_coo)
++        rep = observed_coo.cartesian.transform(matrix_transpose(mat))
++
++    if rep.x.unit != u.one:
++        rep = rep + observed_coo.location.get_itrs().cartesian
++    return itrs_frame.realize_frame(rep)

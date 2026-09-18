@@ -1,0 +1,41 @@
+diff --git a/django/utils/html.py b/django/utils/html.py
+index 3bc02b8dd3..d7f1a886cf 100644
+--- a/django/utils/html.py
++++ b/django/utils/html.py
+@@ -283,7 +283,7 @@ def urlize(text, trim_url_limit=None, nofollow=False, autoescape=False):
+             middle_unescaped = html.unescape(middle)
+             stripped = middle_unescaped.rstrip(TRAILING_PUNCTUATION_CHARS)
+             if middle_unescaped != stripped:
+-                trail = middle[len(stripped):] + trail
++                trail = middle[len(stripped) - len(middle_unescaped):] + trail
+                 middle = middle[:len(stripped) - len(middle_unescaped)]
+                 trimmed_something = True
+         return lead, middle, trail
+diff --git a/tests/utils_tests/test_html.py b/tests/utils_tests/test_html.py
+index 30f5ba68e8..36c943b251 100644
+--- a/tests/utils_tests/test_html.py
++++ b/tests/utils_tests/test_html.py
+@@ -260,6 +260,23 @@ class TestUtilsHtml(SimpleTestCase):
+             with self.subTest(value=value):
+                 self.assertEqual(urlize(value), output)
+ 
++    def test_urlize_entities_with_trailing_punctuation(self):
++        entities = (
++            ('&lt', '%3C'),
++            ('&lt;', '%3C'),
++            ('&#60;', '%3C'),
++            ('&#x3c;', '%3C'),
++            ('&gt;', '%3E'),
++        )
++        for entity, quoted in entities:
++            for punctuation in ('!', '.,:;!'):
++                with self.subTest(entity=entity, punctuation=punctuation):
++                    self.assertEqual(
++                        urlize('Search for google.com/?q=1%s%s and see.' % (entity, punctuation)),
++                        'Search for <a href="http://google.com/?q=1%s">'
++                        'google.com/?q=1%s</a>%s and see.' % (quoted, entity, punctuation),
++                    )
++
+     def test_urlize_unchanged_inputs(self):
+         tests = (
+             ('a' + '@a' * 50000) + 'a',  # simple_email_re catastrophic test

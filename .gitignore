@@ -1,0 +1,9 @@
+.idea/
+.jevcoder/
+.env
+.env.*
+*_key.txt
+node_modules/
+*.tgz
+__pycache__/
+*.pyc

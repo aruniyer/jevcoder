@@ -1,0 +1,61 @@
+diff --git a/sympy/simplify/simplify.py b/sympy/simplify/simplify.py
+index c6b511f20..9bca35e76 100644
+--- a/sympy/simplify/simplify.py
++++ b/sympy/simplify/simplify.py
+@@ -205,9 +205,9 @@ def posify(eq):
+     symbols.
+ 
+     Any symbol that has positive=None will be replaced with a positive dummy
+-    symbol having the same name. This replacement will allow more symbolic
+-    processing of expressions, especially those involving powers and
+-    logarithms.
++    symbol having the same name and retaining any other assumptions.
++    This replacement will allow more symbolic processing of expressions,
++    especially those involving powers and logarithms.
+ 
+     A dictionary that can be sent to subs to restore eq to its original
+     symbols is also returned.
+@@ -251,7 +251,7 @@ def posify(eq):
+             eq[i] = e.subs(reps)
+         return f(eq), {r: s for s, r in reps.items()}
+ 
+-    reps = {s: Dummy(s.name, positive=True)
++    reps = {s: Dummy(s.name, positive=True, **s.assumptions0)
+                  for s in eq.free_symbols if s.is_positive is None}
+     eq = eq.subs(reps)
+     return eq, {r: s for s, r in reps.items()}
+diff --git a/sympy/simplify/tests/test_simplify.py b/sympy/simplify/tests/test_simplify.py
+index 5fe9352b9..af0d47f9a 100644
+--- a/sympy/simplify/tests/test_simplify.py
++++ b/sympy/simplify/tests/test_simplify.py
+@@ -512,6 +512,30 @@ def test_posify():
+         'Sum(_x**(-n), (n, 1, 3))'
+ 
+ 
++def test_posify_preserves_assumptions():
++    for assumption in ('finite', 'integer', 'rational', 'even', 'odd', 'prime'):
++        for value in (True, False):
++            x = Symbol('x', **{assumption: value})
++            original_assumptions = x.assumptions0
++            xp, reps = posify(x)
++            assert xp.is_positive is True
++            assert xp.name == x.name
++            for key, expected in original_assumptions.items():
++                assert getattr(xp, 'is_' + key) is expected
++            assert xp.subs(reps) == x
++            if x.is_positive is None:
++                assert xp.is_Dummy
++                assert reps == {xp: x}
++            else:
++                assert xp == x
++                assert reps == {}
++
++            exprs, reps = posify([x, 1 + x])
++            assert exprs[0].assumptions0 == xp.assumptions0
++            assert exprs[1] == 1 + exprs[0]
++            assert [expr.subs(reps) for expr in exprs] == [x, 1 + x]
++
++
+ def test_issue_4194():
+     # simplify should call cancel
+     from sympy.abc import x, y

@@ -1,0 +1,201 @@
+diff --git a/CHANGES b/CHANGES
+index ba01f72a9..94d74c885 100644
+--- a/CHANGES
++++ b/CHANGES
+@@ -13,6 +13,8 @@ Deprecated
+ Features added
+ --------------
+ 
++* Support links to ``genindex``, ``modindex`` and ``search`` in toctrees for
++  HTML output.
+ * #10286: C++, support requires clauses not just between the template
+   parameter lists and the declaration.
+ * #10755: linkcheck: Check the source URL of raw directives that use the ``url``
+diff --git a/doc/usage/restructuredtext/directives.rst b/doc/usage/restructuredtext/directives.rst
+index 4029b04e6..b80e39b2a 100644
+--- a/doc/usage/restructuredtext/directives.rst
++++ b/doc/usage/restructuredtext/directives.rst
+@@ -95,6 +95,19 @@ tables of contents.  The ``toctree`` directive is the central element.
+    You can also add external links, by giving an HTTP URL instead of a document
+    name.
+ 
++   The special names ``genindex``, ``modindex`` and ``search`` link to the general
++   index, Python module index and search page, respectively. These links are
++   only included in HTML output, and can also be given explicit titles::
++
++      .. toctree::
++
++         genindex
++         Module index <modindex>
++         search
++
++   .. versionadded:: 5.2
++      Links to the generated index and search pages.
++
+    **Section numbering**
+ 
+    If you want to have section numbers even in HTML output, give the
+diff --git a/sphinx/directives/other.py b/sphinx/directives/other.py
+index 35e16e623..fef05cd87 100644
+--- a/sphinx/directives/other.py
++++ b/sphinx/directives/other.py
+@@ -116,7 +116,7 @@ class TocTree(SphinxDirective):
+                         break
+                 # absolutize filenames
+                 docname = docname_join(self.env.docname, docname)
+-                if url_re.match(ref) or ref == 'self':
++                if url_re.match(ref) or ref in ('self', 'genindex', 'modindex', 'search'):
+                     toctree['entries'].append((title, ref))
+                 elif docname not in self.env.found_docs:
+                     if excluded(self.env.doc2path(docname, False)):
+diff --git a/sphinx/environment/adapters/toctree.py b/sphinx/environment/adapters/toctree.py
+index 9678e3c7c..69981c2f1 100644
+--- a/sphinx/environment/adapters/toctree.py
++++ b/sphinx/environment/adapters/toctree.py
+@@ -13,6 +13,7 @@ from sphinx.util.nodes import clean_astext, process_only_nodes
+ 
+ if TYPE_CHECKING:
+     from sphinx.builders import Builder
++    from sphinx.domains.std import StandardDomain
+     from sphinx.environment import BuildEnvironment
+ 
+ 
+@@ -125,6 +126,17 @@ class TocTree:
+                         para = addnodes.compact_paragraph('', '', reference)
+                         item = nodes.list_item('', para)
+                         toc = nodes.bullet_list('', item)
++                    elif ref in ('genindex', 'modindex', 'search'):
++                        if builder.format != 'html':
++                            continue
++                        std = cast('StandardDomain', self.env.get_domain('std'))
++                        ref, _, default_title = std.labels[ref]
++                        reference = nodes.reference('', '', internal=True,
++                                                    refuri=ref, anchorname='',
++                                                    *[nodes.Text(title or default_title)])
++                        para = addnodes.compact_paragraph('', '', reference)
++                        item = nodes.list_item('', para)
++                        toc = nodes.bullet_list('', item)
+                     elif ref == 'self':
+                         # 'self' refers to the document from which this
+                         # toctree originates
+diff --git a/sphinx/environment/collectors/toctree.py b/sphinx/environment/collectors/toctree.py
+index 52a8fd8d1..3ab15df8f 100644
+--- a/sphinx/environment/collectors/toctree.py
++++ b/sphinx/environment/collectors/toctree.py
+@@ -256,7 +256,7 @@ class TocTreeCollector(EnvironmentCollector):
+                         _walk_doctree(docname, subnode, secnum)
+                 elif isinstance(subnode, addnodes.toctree):
+                     for _title, subdocname in subnode['entries']:
+-                        if url_re.match(subdocname) or subdocname == 'self':
++                        if subdocname not in subnode['includefiles']:
+                             # don't mess with those
+                             continue
+ 
+diff --git a/tests/roots/test-toctree-special/conf.py b/tests/roots/test-toctree-special/conf.py
+new file mode 100644
+index 000000000..126b43ade
+--- /dev/null
++++ b/tests/roots/test-toctree-special/conf.py
+@@ -0,0 +1 @@
++numfig = True
+diff --git a/tests/roots/test-toctree-special/index.rst b/tests/roots/test-toctree-special/index.rst
+new file mode 100644
+index 000000000..2a625c1a2
+--- /dev/null
++++ b/tests/roots/test-toctree-special/index.rst
+@@ -0,0 +1,9 @@
++Special toctree entries
++=======================
++
++.. toctree::
++   :numbered:
++
++   subdir/indices
++
++.. py:module:: example
+diff --git a/tests/roots/test-toctree-special/subdir/indices.rst b/tests/roots/test-toctree-special/subdir/indices.rst
+new file mode 100644
+index 000000000..a84dbfe8c
+--- /dev/null
++++ b/tests/roots/test-toctree-special/subdir/indices.rst
+@@ -0,0 +1,13 @@
++Indices and tables
++==================
++
++.. toctree::
++   :maxdepth: 1
++   :caption: Generated pages
++
++   genindex
++   modindex
++   search
++   General index <genindex>
++   Modules <modindex>
++   Search <search>
+diff --git a/tests/test_toctree.py b/tests/test_toctree.py
+index 39d0916d2..783de9a4c 100644
+--- a/tests/test_toctree.py
++++ b/tests/test_toctree.py
+@@ -2,6 +2,10 @@
+ import re
+ 
+ import pytest
++from docutils import nodes
++
++from sphinx import addnodes
++from sphinx.environment.adapters.toctree import TocTree
+ 
+ 
+ @pytest.mark.sphinx(testroot='toctree-glob')
+@@ -30,6 +34,51 @@ def test_singlehtml_toctree(app, status, warning):
+         pytest.fail('Unexpected AttributeError in app.builder.fix_refuris')
+ 
+ 
++@pytest.mark.parametrize('buildername', [
++    pytest.param('html', marks=pytest.mark.sphinx('html')),
++    pytest.param('dirhtml', marks=pytest.mark.sphinx('dirhtml')),
++])
++@pytest.mark.sphinx(testroot='toctree-special')
++def test_toctree_special_pages(app, warning, buildername):
++    app.build()
++    assert warning.getvalue() == ''
++
++    doctree = app.env.get_doctree('subdir/indices')
++    toctree = next(doctree.findall(addnodes.toctree))
++    assert toctree['entries'] == [
++        (None, 'genindex'), (None, 'modindex'), (None, 'search'),
++        ('General index', 'genindex'), ('Modules', 'modindex'), ('Search', 'search'),
++    ]
++    assert toctree['includefiles'] == []
++    assert app.env.toctree_includes['subdir/indices'] == []
++
++    resolved = TocTree(app.env).resolve('subdir/indices', app.builder, toctree)
++    references = list(resolved.findall(nodes.reference))
++    targets = ['genindex', 'py-modindex', 'search'] * 2
++    titles = ['Index', 'Module Index', 'Search Page', 'General index', 'Modules', 'Search']
++    assert [ref.astext() for ref in references] == titles
++    assert [ref['refuri'] for ref in references] == [
++        app.builder.get_relative_uri('subdir/indices', target) for target in targets
++    ]
++    assert all(ref['internal'] for ref in references)
++
++    output = (app.outdir / ('subdir/indices.html' if buildername == 'html'
++                           else 'subdir/indices/index.html')).read_text(encoding='utf8')
++    for ref, target in zip(references, targets):
++        assert 'href="%s">%s</a>' % (ref['refuri'], ref.astext()) in output
++        assert (app.outdir / (target + '.html' if buildername == 'html'
++                             else target + '/index.html')).exists()
++
++
++@pytest.mark.sphinx('text', testroot='toctree-special')
++def test_toctree_special_pages_non_html(app, warning):
++    app.build()
++    assert warning.getvalue() == ''
++    doctree = app.env.get_doctree('subdir/indices')
++    toctree = next(doctree.findall(addnodes.toctree))
++    assert TocTree(app.env).resolve('subdir/indices', app.builder, toctree) is None
++
++
+ @pytest.mark.sphinx(testroot='toctree', srcdir="numbered-toctree")
+ def test_numbered_toctree(app, status, warning):
+     # give argument to :numbered: option
