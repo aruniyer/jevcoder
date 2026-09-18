@@ -10,7 +10,7 @@ For each step:
 2. **The Pi model fills in the arguments or writes the edit.**
 3. **Pi executes the permitted tool**, and the result becomes context for the next decision.
 
-JevCoder reuses Pi's models, authentication, tools, and UI—including supported GitHub Copilot models. Tool schemas stay stable and routing decisions are appended to the model context to preserve prompt-cache reuse. An execution gate admits only the action Jev selected.
+JevCoder reuses Pi's models, authentication, tools, and UI. Tool schemas stay stable and routing decisions are appended to the model context to preserve prompt-cache reuse. An execution gate admits only the action Jev selected.
 
 ## Install the extension
 
@@ -63,7 +63,7 @@ We evaluated **10 seeded samples from [SWE-bench Verified](https://huggingface.c
 - **Pi without Jev:** submit `<prompt>` normally.
 - **Pi with JevCoder:** submit `/jevcoder <prompt>`.
 
-Both used **GPT-6 Astra through GitHub Copilot**, with **medium** thinking, identical tools and budgets, and fresh sessions and clean repository containers. Execution order alternated across samples. We measured success by grading each generated patch with the **official SWE-bench evaluation harness**, and estimated cost from reported token usage, including Jev's routing cost.
+Both used **GPT-6 Astra**, with **medium** thinking, identical tools and budgets, and fresh sessions and clean repository containers. Execution order alternated across samples. We measured success by grading each generated patch with the **official SWE-bench evaluation harness**, and estimated cost from reported token usage, including Jev's routing cost.
 
 | Metric | Pi without Jev | Pi with JevCoder |
 | --- | ---: | ---: |
