@@ -20,7 +20,7 @@ With Pi installed:
 pi install git:github.com/aruniyer/jevcoder
 ```
 
-You need GitHub access to this repository while it is private. Restart Pi or use `/reload` after installation.
+Restart Pi or use `/reload` after installation.
 
 For installation options and extension details, see Pi's [package documentation](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md) and [extension documentation](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md). This extension was tested with Pi **0.85.1**.
 
